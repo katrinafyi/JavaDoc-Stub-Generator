@@ -7,7 +7,7 @@ def _lazy_str(self):
 
 def javadoc_comment(comment, at_tags={}):
     at_tags_str = '\n'.join(
-        tag + ' ' + (text if not text.strip().startswith('- ') else text.strip()[2:]) for tag, texts in at_tags.items() for text in texts
+        tag + ' ' + (text) for tag, texts in at_tags.items() for text in texts
     )
     comment = comment.replace('\n ', '\n')
     return ('/**\n'+comment.rstrip()+'\n'+at_tags_str).replace('\n', '\n * ').rstrip()+'\n */'
@@ -146,7 +146,7 @@ class JavaDocParser:
             if c.name == 'dt':
                 current = self.AT_TAGS[c.text]
             elif current is not None and c.name == 'dd':
-                meth.add_at_tag(current, c.text)
+                meth.add_at_tag(current, c.text.replace(' - ', ' ', 1))
 
 
 
