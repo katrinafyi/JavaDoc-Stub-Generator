@@ -121,12 +121,12 @@ class JavaDocParser:
 
             self._classes.append(j_class)
             
-    def parse_one_method(self, li_elem):
+    def parse_one_method(self, li_elem: bs4.Tag):
         children = list(x for x in li_elem.children if x != '\n')
         j_meth = JavaMethod(children[1].text.replace('\n', ' '))
         for child in children[2:]:
             if 'class' in child.attrs and 'block' in child.attrs['class']:
-                j_meth.set_description(child.text)
+                j_meth.set_description(child.encode_contents().decode('utf-8'))
             elif child.name == 'dl':
                 self.parse_dl(child, j_meth)
             else:
@@ -146,7 +146,7 @@ class JavaDocParser:
             if c.name == 'dt':
                 current = self.AT_TAGS[c.text]
             elif current is not None and c.name == 'dd':
-                meth.add_at_tag(current, c.text.replace(' - ', ' ', 1))
+                meth.add_at_tag(current, c.text.replace(' - ', ' ', 1))  
 
 
 
