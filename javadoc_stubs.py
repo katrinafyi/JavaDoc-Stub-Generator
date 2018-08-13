@@ -29,14 +29,17 @@ class JavaClass:
         self._methods.append(method)
 
     def format(self):
-        interface = 'interface ' in self._definition
+        is_interface = 'interface ' in self._definition
         ret = [javadoc_comment(self._desc), self._definition + ' {']
         ret.append('')
         for c in self._constructors + self._methods:
-            ret.extend(c.format(interface))
+            ret.extend('    '+x for x in c.format(is_interface))
             ret.append('')
         ret.append('}')
-        return '\n'.join(ret)
+        return ret
+
+    def str_format(self):
+        return '\n'.join(self.format())
 
     __repr__ = __str__ = _lazy_str
 
@@ -58,10 +61,10 @@ class JavaMethod:
         self._description = description
 
     def format(self, interface=False):
-        return [
-            javadoc_comment(self._description, self._at_tags),
-            self._definition + (';' if interface else ' {}')
-        ]
+        return (
+            javadoc_comment(self._description, self._at_tags) + '\n' +
+            (self._definition + (';' if interface else ' {}'))
+        ).split('\n')
 
 
     __repr__ = __str__ = _lazy_str
@@ -151,4 +154,4 @@ if __name__ == '__main__':
 
     for c in out:
         with open(os.path.dirname(__file__) + '/../Csse2002_Ass1/stub/'+c.name+'.java', 'w', encoding='utf-8') as f:
-            f.write(c.format().replace('\xa0', ' ').replace(' ', ' '))
+            f.write(c.str_format().replace('\xa0', ' ').replace(' ', ' '))
