@@ -50,13 +50,13 @@ class JavaMethod:
             '@return': [],
         }
         self._description = ''
-    
+
     def add_at_tag(self, tag, text):
         self._at_tags[tag].append(text)
 
     def set_description(self, description):
         self._description = description
-    
+
     def format(self, interface=False):
         return [
             javadoc_comment(self._description, self._at_tags),
@@ -68,19 +68,19 @@ class JavaMethod:
 
 class JavaDocParser:
     EXCLUDE_FILES = [
-        'allclasses-frame.html', 
-        'allclasses-noframe.html', 
-        'constant-values.html', 
-        'deprecated-list.html', 
-        'help-doc.html', 
-        'index-all.html', 
-        'index.html', 
-        'overview-tree.html', 
-        'package-frame.html', 
-        'package-list', 
-        'package-summary.html', 
-        'package-tree.html', 
-        'script.js', 
+        'allclasses-frame.html',
+        'allclasses-noframe.html',
+        'constant-values.html',
+        'deprecated-list.html',
+        'help-doc.html',
+        'index-all.html',
+        'index.html',
+        'overview-tree.html',
+        'package-frame.html',
+        'package-list',
+        'package-summary.html',
+        'package-tree.html',
+        'script.js',
         'stylesheet.css'
     ]
     def __init__(self):
@@ -100,7 +100,7 @@ class JavaDocParser:
             header = soup.find('li', {'class': 'blockList'})
             j_class = JavaClass(
                 header.find('span', {'class': 'typeNameLabel'}).text,
-                header.find('pre').text.replace('\n', ' '),
+                header.find('pre').text.replace('\n', ' ').replace('java.lang.', ''),
                 header.find('div', {'class': 'block'}).text
             )
             try:
@@ -120,10 +120,10 @@ class JavaDocParser:
 
 
             self._classes.append(j_class)
-            
+
     def parse_one_method(self, li_elem: bs4.Tag):
         children = list(x for x in li_elem.children if x != '\n')
-        j_meth = JavaMethod(children[1].text.replace('\n', ' '))
+        j_meth = JavaMethod(children[1].text.replace('java.lang.', ''))
         for child in children[2:]:
             if 'class' in child.attrs and 'block' in child.attrs['class']:
                 j_meth.set_description(child.encode_contents().decode('utf-8'))
@@ -146,13 +146,13 @@ class JavaDocParser:
             if c.name == 'dt':
                 current = self.AT_TAGS[c.text]
             elif current is not None and c.name == 'dd':
-                meth.add_at_tag(current, c.text.replace(' - ', ' ', 1))  
+                meth.add_at_tag(current, c.text.replace(' - ', ' ', 1))
 
 
 
 
 if __name__ == '__main__':
-    out = JavaDocParser().parse_folder(os.path.dirname(__file__) + '/../Csse2002_Ass1/javadoc')
+    out = JavaDocParser().parse_folder(os.path.dirname(__file__) + '/../Csse2002_Ass1/javadoc2')
 
     for c in out:
         with open(os.path.dirname(__file__) + '/../Csse2002_Ass1/stub/'+c.name+'.java', 'w', encoding='utf-8') as f:
