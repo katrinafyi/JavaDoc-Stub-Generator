@@ -87,12 +87,10 @@ class JavaDocParser:
         self._classes = []
 
     def parse_folder(self, folder):
-        self._classes.clear()
         for file in os.listdir(folder):
             path = folder+'/'+file
             if os.path.isfile(path) and file not in self.EXCLUDE_FILES:
-                self.parse_file(path)
-        return self._classes
+                yield self.parse_file(path)
 
     def parse_file(self, file):
         with open(file, encoding='utf-8') as f:
@@ -116,10 +114,7 @@ class JavaDocParser:
                 method_details = []
             for meth in method_details:
                 j_class.add_method(self.parse_one_method(meth.li))
-
-
-
-            self._classes.append(j_class)
+            return j_class
 
     def parse_one_method(self, li_elem: bs4.Tag):
         children = list(x for x in li_elem.children if x != '\n')
