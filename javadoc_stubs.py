@@ -124,7 +124,7 @@ class JavaDocParser:
         j_meth = JavaMethod(children[1].text.replace('java.lang.', ''))
         for child in children[2:]:
             if 'class' in child.attrs and 'block' in child.attrs['class']:
-                j_meth.set_description(child.encode_contents().decode('utf-8'))
+                j_meth.set_description(child.decode_contents())
             elif child.name == 'dl':
                 self.parse_dl(child, j_meth)
             else:
@@ -176,4 +176,4 @@ if __name__ == '__main__':
 
     for c in out:
         with open(os.path.join(args.OUTPUT, c.name+'.java'), 'w', encoding='utf-8') as f:
-            f.write(c.format().replace('\xa0', ' ').replace(' ', ' '))
+            f.write(c.format().replace('\xa0', ' ').replace(' ', ' ').replace('<br/>\n', '\n')) 
