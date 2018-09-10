@@ -171,8 +171,8 @@ if __name__ == '__main__':
         description='Generates Java method stubs from a JavaDoc folder.')
     arg_parser.add_argument('INPUT', nargs='+', 
         help='input JavaDoc HTML files or directory')
-    arg_parser.add_argument('OUTPUT', nargs='?', default='./stub', 
-        help='output directory (default: ./stub/)')
+    arg_parser.add_argument('--output-directory', '-o', default='./stub', 
+        help='output directory (default: ./stub)')
     arg_parser.add_argument('--indent', '-i', type=int, default=4,
         help='number of spaces to use for indentation (default: 4)')
     args = arg_parser.parse_args()
