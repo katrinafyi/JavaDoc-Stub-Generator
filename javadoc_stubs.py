@@ -90,10 +90,11 @@ class JavaDocParser:
         self._classes = []
 
     def parse_folder(self, folder):
-        for file in os.listdir(folder):
-            path = folder+'/'+file
-            if os.path.isfile(path) and file not in self.EXCLUDE_FILES:
-                yield self.parse_file(path)
+        for root, folders, files in os.walk(folder):
+            for file in files:
+                path = root+'/'+file
+                if os.path.isfile(path) and file not in self.EXCLUDE_FILES:
+                    yield self.parse_file(path)
 
     def parse_file(self, file):
         with open(file, encoding='utf-8') as f:
