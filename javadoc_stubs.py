@@ -45,6 +45,19 @@ class JavaClass:
 
     __repr__ = __str__ = _lazy_str
 
+class JavaField:
+    def __init__(self, definition):
+        self._definition = definition 
+
+    def set_description(self, description):
+        self._description = description
+
+    def format_as_lines(self):
+        return (
+            javadoc_comment(self._description) + '\n' +
+            (self._definition + ';')
+        ).split('\n')
+
 class JavaMethod:
 
     def __init__(self, definition):
