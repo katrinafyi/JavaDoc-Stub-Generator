@@ -47,11 +47,7 @@ class JavaMethod:
 
     def __init__(self, definition):
         self._definition = definition
-        self._at_tags = {
-            '@param': [],
-            '@throws': [],
-            '@return': [],
-        }
+        self._at_tags = defaultdict(lambda: [])
         self._description = ''
 
     def add_at_tag(self, tag, text):
@@ -87,11 +83,17 @@ class JavaDocParser:
         'stylesheet.css',
         'serialized-form.html'
     ]
+    EXCLUDE_FOLDERS = [
+        'index-files'
+    ]
+
     def __init__(self):
         self._classes = []
 
     def parse_folder(self, folder):
         for root, folders, files in os.walk(folder):
+            if os.path.basename(root) in self.EXCLUDE_FOLDERS:
+                continue
             for file in files:
                 path = root+'/'+file
                 if os.path.isfile(path) and file not in self.EXCLUDE_FILES:
@@ -137,7 +139,10 @@ class JavaDocParser:
         'Parameters:': '@param',
         'Returns:': '@return',
         'Throws:': '@throws',
-        'Specified by:': None
+        'Specified by:': None,
+        'Require:': '@require',
+        'Overrides:': None,
+        'Ensure:': '@ensure'
     }
 
     def parse_dl(self, dl, meth: JavaMethod):
