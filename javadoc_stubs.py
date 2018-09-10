@@ -38,7 +38,14 @@ class JavaClass:
 
     def format_as_lines(self, indent=4):
         is_interface = 'interface ' in self._definition
-        ret = [javadoc_comment(self._desc), self._definition + ' {']
+        ret = []
+        if self.package:
+            ret.append('package ' + self.package + ';')
+            ret.append('')
+        ret.extend([
+            javadoc_comment(self._desc), 
+            self._definition + ' {'
+        ])
         ret.append('')
         for c in self._fields + self._constructors + self._methods:
             ret.extend(indent*' '+x for x in c.format_as_lines(is_interface))
