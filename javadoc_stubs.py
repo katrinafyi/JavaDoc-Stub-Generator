@@ -189,6 +189,8 @@ if __name__ == '__main__':
     os.makedirs(args.OUTPUT, exist_ok=True)
 
     for c in out:
-        os.makedirs(os.path.dirname(c.file_path), exist_ok=True)
-        with open(os.path.join(args.OUTPUT, c.file_path), 'w', encoding='utf-8') as f:
+        java_file_path = os.path.join(args.OUTPUT, c.file_path)
+        os.makedirs(os.path.dirname(java_file_path), exist_ok=True)
+        
+        with open(java_file_path, 'w', encoding='utf-8') as f:
             f.write(c.format().replace('\xa0', ' ').replace(' ', ' ').replace('<br/>\n', '\n')) 
