@@ -84,7 +84,8 @@ class JavaDocParser:
         'package-summary.html',
         'package-tree.html',
         'script.js',
-        'stylesheet.css'
+        'stylesheet.css',
+        'serialized-form.html'
     ]
     def __init__(self):
         self._classes = []
