@@ -2,12 +2,12 @@
 ```
 usage: javadoc_stubs.py [-h] [--output-directory OUTPUT_DIRECTORY]
                         [--indent INDENT]
-                        input [input ...]
+                        INPUT [INPUT ...]
 
 Generates Java method stubs from a JavaDoc folder.
 
 positional arguments:
-  input                 input JavaDoc HTML files or directory
+  INPUT                 input JavaDoc HTML files or directory
 
 optional arguments:
   -h, --help            show this help message and exit
