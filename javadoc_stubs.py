@@ -79,6 +79,7 @@ class JavaMethod:
         self._definition = definition
         self._at_tags = defaultdict(lambda: [])
         self._description = ''
+        self._decorators = []
 
     def add_at_tag(self, tag, text):
         self._at_tags[tag].append(text)
@@ -86,12 +87,16 @@ class JavaMethod:
     def set_description(self, description):
         self._description = description
 
+    def add_decorator(self, dec):
+        if dec not in self._decorators:
+            self._decorators.append(dec)
+
     def format_as_lines(self, interface=False):
         return (
             javadoc_comment(self._description, self._at_tags) + '\n' +
+            '\n'.join(self._decorators) + '\n' +
             (self._definition + (';' if interface else ' {}'))
         ).split('\n')
-
 
     __repr__ = __str__ = _lazy_str
 
@@ -190,7 +195,7 @@ class JavaDocParser:
         'Throws:': '@throws',
         'Specified by:': None,
         'Require:': '@require',
-        'Overrides:': None,
+        'Overrides:': '__overrides__',
         'Ensure:': '@ensure'
     }
 
@@ -199,6 +204,8 @@ class JavaDocParser:
         for c in dl.children:
             if c.name == 'dt':
                 current = self.AT_TAGS[c.text]
+            elif current == '__overrides__':
+                meth.add_decorator('@Override')
             elif current is not None and c.name == 'dd':
                 meth.add_at_tag(current, c.text.replace(' - ', ' ', 1))
 
