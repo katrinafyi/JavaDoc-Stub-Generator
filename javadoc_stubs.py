@@ -15,8 +15,10 @@ def javadoc_comment(comment, at_tags={}):
 
 
 class JavaClass:
-    def __init__(self, name, definition, description):
+    def __init__(self, package, name, definition, description):
+        self.package = package
         self.name = name
+        self.file_path = os.path.join(*self.package.split('.'), name)
         self._definition = definition
         self._desc = description
         self._constructors = []
@@ -103,7 +105,12 @@ class JavaDocParser:
         with open(file, encoding='utf-8') as f:
             soup = bs4.BeautifulSoup(f.read(), features='lxml')
             header = soup.find('li', {'class': 'blockList'})
+            try:
+                package = soup.find('div', {'class': 'subTitle'}).text
+            except AttributeError:
+                package = ''
             j_class = JavaClass(
+                package,
                 header.find('span', {'class': 'typeNameLabel'}).text,
                 header.find('pre').text.replace('\n', ' ').replace('java.lang.', ''),
                 header.find('div', {'class': 'block'}).text
