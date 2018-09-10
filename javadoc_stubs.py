@@ -189,5 +189,6 @@ if __name__ == '__main__':
     os.makedirs(args.OUTPUT, exist_ok=True)
 
     for c in out:
-        with open(os.path.join(args.OUTPUT, c.full_path, 'w', encoding='utf-8') as f:
+        os.makedirs(os.path.dirname(c.full_path), exist_ok=True)
+        with open(os.path.join(args.OUTPUT, c.full_path), 'w', encoding='utf-8') as f:
             f.write(c.format().replace('\xa0', ' ').replace(' ', ' ').replace('<br/>\n', '\n')) 
