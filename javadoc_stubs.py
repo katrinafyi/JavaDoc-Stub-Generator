@@ -9,8 +9,10 @@ def javadoc_comment(comment, at_tags={}):
     at_tags_str = '\n'.join(
         tag + ' ' + (text) for tag, texts in at_tags.items() for text in texts
     )
+    if at_tags_str:
+        at_tags_str = '\n'+at_tags_str
     comment = comment.replace('\n ', '\n')
-    return ('/**\n'+comment.rstrip()+'\n'+at_tags_str).replace('\n', '\n * ').rstrip()+'\n */'
+    return ('/**\n'+comment.rstrip()+at_tags_str).replace('\n', '\n * ').rstrip()+'\n */'
 
 
 
@@ -23,6 +25,7 @@ class JavaClass:
         self._desc = description
         self._constructors = []
         self._methods = []
+        self._fields = []
 
     def add_constructor(self, method):
         self._constructors.append(method)
@@ -30,11 +33,14 @@ class JavaClass:
     def add_method(self, method):
         self._methods.append(method)
 
+    def add_field(self, field):
+        self._fields.append(field)
+
     def format_as_lines(self, indent=4):
         is_interface = 'interface ' in self._definition
         ret = [javadoc_comment(self._desc), self._definition + ' {']
         ret.append('')
-        for c in self._constructors + self._methods:
+        for c in self._fields + self._constructors + self._methods:
             ret.extend(indent*' '+x for x in c.format_as_lines(is_interface))
             ret.append('')
         ret.append('}')
@@ -45,6 +51,8 @@ class JavaClass:
 
     __repr__ = __str__ = _lazy_str
 
+
+# TODO: Superclass for these Java* classes defining common methods.
 class JavaField:
     def __init__(self, definition):
         self._definition = definition 
@@ -52,7 +60,7 @@ class JavaField:
     def set_description(self, description):
         self._description = description
 
-    def format_as_lines(self):
+    def format_as_lines(self, _is_interface=None):
         return (
             javadoc_comment(self._description) + '\n' +
             (self._definition + ';')
@@ -141,7 +149,21 @@ class JavaDocParser:
                 method_details = []
             for meth in method_details:
                 j_class.add_method(self.parse_one_method(meth.li))
+
+            try:
+                fields = soup.find('a', {'name': 'field.detail'}).parent.find_all('ul', recursive=False)
+            except AttributeError:
+                fields = ()
+            for field in fields:
+                j_class.add_field(self.parse_one_field(field.li))
+
             return j_class
+
+    def parse_one_field(self, li_elem: bs4.Tag):
+        j_field = JavaField(li_elem.pre.text)
+        j_field.set_description(
+            li_elem.find('div', {'class': 'block'}).decode_contents())
+        return j_field
 
     def parse_one_method(self, li_elem: bs4.Tag):
         children = list(x for x in li_elem.children if x != '\n')
