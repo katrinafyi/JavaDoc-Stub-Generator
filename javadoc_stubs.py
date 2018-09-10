@@ -186,10 +186,10 @@ if __name__ == '__main__':
         except NotADirectoryError:
             out.append(javadoc_parser.parse_file(file_or_dir))
 
-    os.makedirs(args.OUTPUT, exist_ok=True)
+    os.makedirs(args.output_directory, exist_ok=True)
 
     for c in out:
-        java_file_path = os.path.join(args.OUTPUT, c.file_path)
+        java_file_path = os.path.join(args.output_directory, c.file_path)
         os.makedirs(os.path.dirname(java_file_path), exist_ok=True)
         
         with open(java_file_path, 'w', encoding='utf-8') as f:
