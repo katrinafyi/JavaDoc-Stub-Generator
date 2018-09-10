@@ -18,7 +18,7 @@ class JavaClass:
     def __init__(self, package, name, definition, description):
         self.package = package
         self.name = name
-        self.file_path = os.path.join(*self.package.split('.'), name)
+        self.file_path = os.path.join(*self.package.split('.'), name+'.java')
         self._definition = definition
         self._desc = description
         self._constructors = []
@@ -189,5 +189,5 @@ if __name__ == '__main__':
     os.makedirs(args.OUTPUT, exist_ok=True)
 
     for c in out:
-        with open(os.path.join(args.OUTPUT, c.name+'.java'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(args.OUTPUT, c.full_path, 'w', encoding='utf-8') as f:
             f.write(c.format().replace('\xa0', ' ').replace(' ', ' ').replace('<br/>\n', '\n')) 
