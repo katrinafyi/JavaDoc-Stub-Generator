@@ -14,7 +14,15 @@ def javadoc_comment(comment, at_tags={}):
     comment = comment.replace('\n ', '\n')
     return ('/**\n'+comment.rstrip()+at_tags_str).replace('\n', '\n * ').rstrip()+'\n */'
 
+METHOD_MODIFIERS = {
+    'public', 'private', 'static', 'abstract', 'final', 'synchronized',
+    'native', 'strictfp', 'protected'
+}
 
+PRIMITIVE_TYPES = {
+    'byte': '0', 'short': '0', 'int': '0', 'long': '0', 'float': '0',
+    'double': '0', 'boolean': 'true', 'char': '\'0\''
+}
 
 class JavaClass:
     def __init__(self, package, name, definition, description):
@@ -94,7 +102,7 @@ class JavaMethod:
     def format_as_lines(self, interface=False):
         return (
             javadoc_comment(self._description, self._at_tags) + '\n' +
-            '\n'.join(self._decorators) + '\n' +
+            '\n'.join(self._decorators) + ('\n' if self._decorators else '') +
             (self._definition + (';' if interface else ' {}'))
         ).split('\n')
 
