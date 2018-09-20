@@ -160,7 +160,8 @@ class JavaMethod(JavaObject):
                     capturing_signature = True
                     method_name = t.split('(')
                     left = method_name[0] + '('
-                    signature.append(method_name[1])
+                    if method_name[1] != ')':
+                        signature.append(method_name[1])
                 continue
             # Parameter name or blank, not in signature.
             if not t or t.endswith(','): 
