@@ -205,13 +205,13 @@ class JavaMethod(JavaObject):
             suffix = ()
         else:
             definition_suffix = ' {'
-            suffix = ('}')
-        
-        if todo:
-            body.append(todo_comment)
-        body.append(self._make_return_statement())
-        
-        body = self.indent(indent, body)
+            suffix = ('}', )
+
+            if todo:
+                body.append(todo_comment)
+            body.append(self._make_return_statement())
+            
+            body = self.indent(indent, body)
         
         lines = javadoc_comment(self._description, self._at_tags).split('\n')
         lines.extend(self._decorators)
