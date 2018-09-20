@@ -154,15 +154,19 @@ class JavaMethod(JavaObject):
         left = None
         capturing_signature = False
         for t in self._definition.split(' '):
+            t = t.strip()
             if not capturing_signature:
                 if '(' in t: # Method signatures begin with Name( ...
                     capturing_signature = True
                     left = t
                 continue
-            if t.endswith(','): # Parameter name, not in signature.
+            # Parameter name or blank, not in signature.
+            if not t or t.endswith(','): 
                 continue 
+            if t.endswith(')'): # Ends with a close bracket.
+                break
             signature.append(t)
-        return left+' '.join(signature) + ')'
+        return left + ', '.join(signature) + ')'
 
     def set_as_constructor(self, is_constructor=True):
         self._is_constructor = is_constructor
@@ -200,15 +204,16 @@ class JavaMethod(JavaObject):
             definition_suffix = ' {'
             suffix = ('}')
         
-        if todo_comment:
+        if todo:
             body.append(todo_comment)
+        body.append(self._make_return_statement())
         
-        body = self.indent(indent, (self._make_return_statement(), ))
+        body = self.indent(indent, body)
         
         lines = javadoc_comment(self._description, self._at_tags).split('\n')
         lines.extend(self._decorators)
         lines.extend((self._definition + definition_suffix).split('\n'))
-        lines.extend(self.indent(indent, body))
+        lines.extend(body)
         lines.extend(suffix)
 
         return lines
