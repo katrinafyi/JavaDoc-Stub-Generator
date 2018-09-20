@@ -33,7 +33,7 @@ RESERVED_WORDS = ALL_MODIFIERS | set(PRIMITIVE_TYPES.keys())
 
 class JavaObject:
     def __init__(self, definition):
-        self._definition = definition
+        self._definition = definition.replace('\xa0', ' ')
 
         self._modifiers = []
         self._parse_modifiers()
@@ -68,6 +68,7 @@ class JavaClass(JavaObject):
 
     def add_constructor(self, method: 'JavaMethod'):
         self._constructors.append(method)
+        method.set_as_constructor(True)
         method.set_class(self)
 
     def add_method(self, method):
@@ -78,7 +79,7 @@ class JavaClass(JavaObject):
         self._fields.append(field)
 
     def format_as_lines(self, indent=4):
-        is_interface = 'interface ' in self._definition
+        is_interface = 'interface' == self.type
         ret = []
         if self.package:
             ret.append('package ' + self.package + ';')
@@ -89,7 +90,7 @@ class JavaClass(JavaObject):
         ])
         ret.append('')
         for c in self._fields + self._constructors + self._methods:
-            ret.extend(indent*' '+x for x in c.format_as_lines(is_interface))
+            ret.extend(indent*' '+x for x in c.format_as_lines(indent))
             ret.append('')
         ret.append('}')
         return ret
@@ -161,20 +162,20 @@ class JavaMethod(JavaObject):
         if not has_body:
             body_string = ';'
         else:
-            body_string = ' {\n'+self.indent(indent, 
-                (self._make_return_statement(self._return_type), )) + '\n}'
+            body_string = ' {\n'+'\n'.join(self.indent(indent, 
+                (self._make_return_statement(), ))) + '\n}'
         
-        return (
-            javadoc_comment(self._description, self._at_tags) + '\n' +
-            '\n'.join(self._decorators) 
-            + ('\n' if self._decorators else '') 
-            + (self._definition + body_string)
-        ).split('\n')
+        lines = javadoc_comment(self._description, self._at_tags).split('\n')
+        lines.extend(self._decorators)
+        lines.extend((self._definition + body_string).split('\n'))
 
-    @staticmethod
-    def _make_return_statement(return_type):
+        return lines
+
+    def _make_return_statement(self):
+        if self._is_constructor:
+            return ''
         try:
-            return_value = PRIMITIVE_TYPES[return_type]
+            return_value = PRIMITIVE_TYPES[self._return_type]
         except KeyError:
             return_value = 'null'
         if return_value is None:
