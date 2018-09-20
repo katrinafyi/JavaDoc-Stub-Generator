@@ -78,7 +78,7 @@ class JavaClass(JavaObject):
     def add_field(self, field):
         self._fields.append(field)
 
-    def format_as_lines(self, indent=4):
+    def format_as_lines(self, **kwargs):
         is_interface = 'interface' == self.type
         ret = []
         if self.package:
@@ -89,14 +89,15 @@ class JavaClass(JavaObject):
             self._definition + ' {'
         ])
         ret.append('')
+        indent = kwargs.get('indent', 4)
         for c in self._fields + self._constructors + self._methods:
-            ret.extend(indent*' '+x for x in c.format_as_lines(indent))
+            ret.extend(self.indent(indent, c.format_as_lines(**kwargs)))
             ret.append('')
         ret.append('}')
         return ret
 
-    def format(self, indent=4):
-        return '\n'.join(self.format_as_lines(indent=indent))
+    def format(self, **kwargs):
+        return '\n'.join(self.format_as_lines(**kwargs))
 
     __repr__ = __str__ = _lazy_str
 
@@ -105,14 +106,21 @@ class JavaClass(JavaObject):
 class JavaField(JavaObject):
     def __init__(self, definition):
         super().__init__(definition)
+        self._name = self._definition.split(' ')[-1]
 
     def set_description(self, description):
         self._description = description
 
-    def format_as_lines(self, _is_interface=None):
+    def format_as_lines(self, **kwargs):
+        todo = kwargs.get('todo', False)
+
+        todo_comment = ''
+        if todo:
+            todo_comment = ' // TODO: Implement field ' +self._name
+
         return (
             javadoc_comment(self._description) + '\n' +
-            (self._definition + ';')
+            (self._definition + ';' + todo_comment)
         ).split('\n')
 
 class JavaMethod(JavaObject):
@@ -126,6 +134,8 @@ class JavaMethod(JavaObject):
         self._is_constructor = False
         self._return_type = self._parse_return_type()
 
+        self.signature = self._parse_method_signature()
+
     def _parse_return_type(self):
         capturing_type = False
         ret_type = []
@@ -138,6 +148,21 @@ class JavaMethod(JavaObject):
                 break
             ret_type.append(t)
         return ' '.join(ret_type)
+
+    def _parse_method_signature(self):
+        signature = []
+        left = None
+        capturing_signature = False
+        for t in self._definition.split(' '):
+            if not capturing_signature:
+                if '(' in t: # Method signatures begin with Name( ...
+                    capturing_signature = True
+                    left = t
+                continue
+            if t.endswith(','): # Parameter name, not in signature.
+                continue 
+            signature.append(t)
+        return left+' '.join(signature) + ')'
 
     def set_as_constructor(self, is_constructor=True):
         self._is_constructor = is_constructor
@@ -155,19 +180,36 @@ class JavaMethod(JavaObject):
         if dec not in self._decorators:
             self._decorators.append(dec)
 
-    def format_as_lines(self, indent=4):
+    def format_as_lines(self, **kwargs):
         has_body = 'abstract' not in self._modifiers \
             and self._parent.type != 'interface'
 
-        if not has_body:
-            body_string = ';'
+        indent = kwargs.get('indent', 4)
+        todo = kwargs.get('todo', False)
+
+        if not todo:
+            todo_comment = ''
         else:
-            body_string = ' {\n'+'\n'.join(self.indent(indent, 
-                (self._make_return_statement(), ))) + '\n}'
+            todo_comment = '// TODO: Implement method '+self.signature
+
+        body = []
+        if not has_body:
+            definition_suffix = ';'
+            suffix = ()
+        else:
+            definition_suffix = ' {'
+            suffix = ('}')
+        
+        if todo_comment:
+            body.append(todo_comment)
+        
+        body = self.indent(indent, (self._make_return_statement(), ))
         
         lines = javadoc_comment(self._description, self._at_tags).split('\n')
         lines.extend(self._decorators)
-        lines.extend((self._definition + body_string).split('\n'))
+        lines.extend((self._definition + definition_suffix).split('\n'))
+        lines.extend(self.indent(indent, body))
+        lines.extend(suffix)
 
         return lines
 
@@ -309,6 +351,8 @@ if __name__ == '__main__':
         help='output directory (default: ./stub)')
     arg_parser.add_argument('--indent', '-i', type=int, default=4,
         help='number of spaces to use for indentation (default: 4)')
+    arg_parser.add_argument('--todo', '-t', action='store_true',
+        help='add TODO comments to methods')
     args = arg_parser.parse_args()
     
     javadoc_parser = JavaDocParser()
@@ -327,4 +371,6 @@ if __name__ == '__main__':
         os.makedirs(os.path.dirname(java_file_path), exist_ok=True)
         
         with open(java_file_path, 'w', encoding='utf-8') as f:
-            f.write(c.format().replace('\xa0', ' ').replace(' ', ' ').replace('<br/>\n', '\n')) 
+            f.write(c.format(**{
+                'indent': args.indent, 'todo': args.todo
+            }).replace('\xa0', ' ').replace(' ', ' ').replace('<br/>\n', '\n')) 
