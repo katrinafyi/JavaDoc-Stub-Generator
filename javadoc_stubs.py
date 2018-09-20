@@ -158,7 +158,9 @@ class JavaMethod(JavaObject):
             if not capturing_signature:
                 if '(' in t: # Method signatures begin with Name( ...
                     capturing_signature = True
-                    left = t
+                    method_name = t.split('(')
+                    left = method_name[0] + '('
+                    signature.append(method_name[1])
                 continue
             # Parameter name or blank, not in signature.
             if not t or t.endswith(','): 
@@ -166,7 +168,7 @@ class JavaMethod(JavaObject):
             if t.endswith(')'): # Ends with a close bracket.
                 break
             signature.append(t)
-        return left + ', '.join(signature) + ')'
+        return left+', '.join(signature) + (')' if not left.endswith(')') else '')
 
     def set_as_constructor(self, is_constructor=True):
         self._is_constructor = is_constructor
