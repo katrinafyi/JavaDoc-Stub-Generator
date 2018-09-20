@@ -330,7 +330,7 @@ class JavaDocParser:
         'Throws:': '@throws',
         'Specified by:': None,
         'Require:': '@require',
-        'Overrides:': '__overrides__',
+        'Overrides:': 'DECORATOR:@Override',
         'Ensure:': '@ensure'
     }
 
@@ -339,8 +339,8 @@ class JavaDocParser:
         for c in dl.children:
             if c.name == 'dt':
                 current = self.AT_TAGS[c.text]
-            elif current == '__overrides__':
-                meth.add_decorator('@Override')
+            elif current is not None and current.startswith('DECORATOR:'):
+                meth.add_decorator(current.replace('DECORATOR:', '', 1))
             elif current is not None and c.name == 'dd':
                 meth.add_at_tag(current, c.text.replace(' - ', ' ', 1))
 
