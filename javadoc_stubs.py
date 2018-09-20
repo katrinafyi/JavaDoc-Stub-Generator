@@ -1,6 +1,7 @@
 import bs4
 import os
 from collections import defaultdict
+from enum import Enum, auto
 
 def _lazy_str(self):
     return self.__class__.__name__ + '('+', '.join((x+'='+repr(y)) for x, y in self.__dict__.items())+')'
@@ -16,30 +17,62 @@ def javadoc_comment(comment, at_tags={}):
 
 METHOD_MODIFIERS = {
     'public', 'private', 'static', 'abstract', 'final', 'synchronized',
-    'native', 'strictfp', 'protected'
+    'native', 'strictfp', 'protected', 'volatile'
 }
+
+CLASS_TYPES = {'class', 'interface', 'enum'}
+
+ALL_MODIFIERS = METHOD_MODIFIERS | CLASS_TYPES
 
 PRIMITIVE_TYPES = {
     'byte': '0', 'short': '0', 'int': '0', 'long': '0', 'float': '0',
-    'double': '0', 'boolean': 'true', 'char': '\'0\''
+    'double': '0', 'boolean': 'true', 'char': '\'0\'', 'void': None,
 }
 
-class JavaClass:
+RESERVED_WORDS = ALL_MODIFIERS | set(PRIMITIVE_TYPES.keys())
+
+class JavaObject:
+    def __init__(self, definition):
+        self._definition = definition
+
+        self._modifiers = []
+        self._parse_modifiers()
+
+    def _parse_modifiers(self):
+        for token in self._definition.split(' '):
+            if not token:
+                continue
+            if token not in ALL_MODIFIERS:
+                break
+            self._modifiers.append(token)
+
+    @staticmethod
+    def indent(indent, lines):
+        for l in lines:
+            yield ' '*indent + l
+
+class JavaClass(JavaObject):
     def __init__(self, package, name, definition, description):
+        super().__init__(definition)
+
         self.package = package
         self.name = name
         self.file_path = os.path.join(*self.package.split('.'), name+'.java')
-        self._definition = definition
         self._desc = description
+
         self._constructors = []
         self._methods = []
         self._fields = []
 
-    def add_constructor(self, method):
+        self.type = next(filter(lambda x: x in CLASS_TYPES, self._modifiers))
+
+    def add_constructor(self, method: 'JavaMethod'):
         self._constructors.append(method)
+        method.set_class(self)
 
     def add_method(self, method):
         self._methods.append(method)
+        method.set_class(self)
 
     def add_field(self, field):
         self._fields.append(field)
@@ -68,9 +101,9 @@ class JavaClass:
 
 
 # TODO: Superclass for these Java* classes defining common methods.
-class JavaField:
+class JavaField(JavaObject):
     def __init__(self, definition):
-        self._definition = definition 
+        super().__init__(definition)
 
     def set_description(self, description):
         self._description = description
@@ -81,13 +114,35 @@ class JavaField:
             (self._definition + ';')
         ).split('\n')
 
-class JavaMethod:
+class JavaMethod(JavaObject):
 
     def __init__(self, definition):
-        self._definition = definition
+        super().__init__(definition)
         self._at_tags = defaultdict(lambda: [])
         self._description = ''
         self._decorators = []
+
+        self._is_constructor = False
+        self._return_type = self._parse_return_type()
+
+    def _parse_return_type(self):
+        capturing_type = False
+        ret_type = []
+        for t in self._definition.split(' '):
+            if not capturing_type:
+                if not t: continue 
+                if t in METHOD_MODIFIERS: continue 
+            capturing_type = True 
+            if '(' in t:
+                break
+            ret_type.append(t)
+        return ' '.join(ret_type)
+
+    def set_as_constructor(self, is_constructor=True):
+        self._is_constructor = is_constructor
+
+    def set_class(self, class_: JavaClass):
+        self._parent = class_
 
     def add_at_tag(self, tag, text):
         self._at_tags[tag].append(text)
@@ -99,12 +154,33 @@ class JavaMethod:
         if dec not in self._decorators:
             self._decorators.append(dec)
 
-    def format_as_lines(self, interface=False):
+    def format_as_lines(self, indent=4):
+        has_body = 'abstract' not in self._modifiers \
+            and self._parent.type != 'interface'
+
+        if not has_body:
+            body_string = ';'
+        else:
+            body_string = ' {\n'+self.indent(indent, 
+                (self._make_return_statement(self._return_type), )) + '\n}'
+        
         return (
             javadoc_comment(self._description, self._at_tags) + '\n' +
-            '\n'.join(self._decorators) + ('\n' if self._decorators else '') +
-            (self._definition + (';' if interface else ' {}'))
+            '\n'.join(self._decorators) 
+            + ('\n' if self._decorators else '') 
+            + (self._definition + body_string)
         ).split('\n')
+
+    @staticmethod
+    def _make_return_statement(return_type):
+        try:
+            return_value = PRIMITIVE_TYPES[return_type]
+        except KeyError:
+            return_value = 'null'
+        if return_value is None:
+            return 'return;'
+        return 'return '+return_value+';'
+
 
     __repr__ = __str__ = _lazy_str
 
